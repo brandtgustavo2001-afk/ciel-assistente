@@ -1,0 +1,10 @@
+package br.com.ciel;
+import org.junit.Test;
+import static org.junit.Assert.*;
+public class CommandTest {
+    @Test public void wakeMustBeAWord() { assertNull(Command.afterWake("especial toque algo")); assertEquals("abra spotify",Command.afterWake("Ciel, abra Spotify")); }
+    @Test public void routes() { assertEquals("whatsapp",Command.parse("abra o WhatsApp").kind()); assertEquals("play",Command.parse("toque a música Evidências").kind()); assertEquals("evidencias",Command.parse("toque a música Evidências").value()); assertEquals("pause",Command.parse("feche Spotify").kind()); }
+    @Test public void alarms() { assertEquals(7,Command.parse("crie alarme para sete horas").hour()); assertEquals(30,Command.parse("alarme 07:30").minute()); assertEquals("invalid",Command.parse("alarme 25:99").kind()); }
+    @Test public void controls() { assertEquals("next",Command.parse("próxima música").kind()); assertEquals("resume",Command.parse("continue").kind()); }
+    @Test public void alarmMinutesAreNotDropped() { assertEquals(30,Command.parse("alarme 7 e 30").minute()); assertEquals(30,Command.parse("alarme sete e meia").minute()); assertEquals("invalid",Command.parse("alarme sete e vinte").kind()); }
+}
