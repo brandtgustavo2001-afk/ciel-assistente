@@ -1,4 +1,26 @@
-# Ciel · Android · prévia 0.1
+# Ciel · Android · prévia com atualizações
+
+[Baixar a versão mais recente](https://github.com/brandtgustavo2001-afk/ciel-assistente/releases/latest/download/Ciel.apk) · [Todas as versões](https://github.com/brandtgustavo2001-afk/ciel-assistente/releases)
+
+## Atualizações no celular
+
+Instale `Ciel.apk` da versão mais recente uma vez. Se já instalou a prévia 0.1, esta instalação atualiza por cima: o pacote e a assinatura foram preservados.
+
+Depois disso, a Ciel verifica e baixa atualizações por Wi-Fi aproximadamente a cada 24 horas usando WorkManager. O Android pode adiar a execução por bateria, ausência de Wi-Fi, restrições do HyperOS ou interrupção forçada do aplicativo. A busca é programada ao abrir a Ciel pela primeira vez. Permita notificações para receber o aviso de atualização pronta.
+
+Toque no aviso ou em **Instalar atualização baixada** e confirme no Android. Na primeira vez, autorize a Ciel em “Instalar apps desconhecidos”. **A instalação não é silenciosa:** esse fluxo precisa da sua confirmação. Não precisa desinstalar nem procurar um novo APK manualmente. As configurações e a conexão Spotify são mantidas.
+
+O botão **Verificar atualização agora** também funciona com dados móveis, após confirmação do download. O APK inclui o modelo de voz e tem cerca de 70 MB.
+
+O atualizador aceita somente HTTPS em hosts específicos do GitHub, limita tamanho, verifica SHA-256, identificador de pacote, versão crescente e a mesma assinatura do app instalado. O Android faz a validação final ao instalar. Nenhum token GitHub é armazenado no celular.
+
+## Publicação de novas versões
+
+Cada push em `main` executa `.github/workflows/android.yml`: testes, lint, build, assinatura e publicação de uma GitHub Release com `Ciel.apk`, `update.json` e SHA-256. Se alguma etapa falhar, a publicação não ocorre. Pull requests executam verificação sem receber a chave de assinatura nem publicar.
+
+O `versionCode` de publicação é `1000 + GITHUB_RUN_NUMBER`, e o nome `0.2.GITHUB_RUN_NUMBER`. Preserve o workflow e sua sequência: se recriá-lo ou migrar o repositório, aumente a base para ficar acima das versões já instaladas. Reexecutar uma publicação já existente não substitui os arquivos automaticamente; faça novo push para gerar a próxima versão.
+
+A chave privada de continuidade está nos GitHub Actions Secrets, com cópia local ignorada pelo Git em `.tools/ciel-signing.jks`. Essa chave foi preservada do primeiro APK experimental para permitir atualizar a instalação existente. Não a publique nem a substitua: perder a chave impede atualizar instalações existentes sem desinstalar. Esta é uma distribuição experimental fora da loja, ainda não uma configuração definitiva de assinatura para Google Play.
 
 Assistente de comandos em português para teste no Poco X7 Pro (Android 13 ou superior). Sem chave OpenAI, sem conversa de IA e sem acesso à conta ChatGPT. O áudio é reconhecido localmente com Vosk; apenas buscas e comandos musicais usam a internet e a API Spotify.
 
@@ -27,7 +49,7 @@ Tokens ficam nos dados privados do app, excluídos de backup. Desconectar apaga 
 
 ## Instalar e testar
 
-Transfira `entrega/Ciel-0.1-debug.apk` para o Poco e abra o arquivo para instalar a prévia. O Android poderá pedir autorização de instalação para o aplicativo que abriu o arquivo. É um APK de desenvolvimento assinado com chave de teste, não uma versão de loja.
+Baixe `Ciel.apk` na seção Releases do GitHub, transfira para o Poco e abra para instalar a prévia. O Android poderá pedir autorização de instalação para o aplicativo que abriu o arquivo. É uma distribuição experimental, não uma versão de loja.
 
 1. Abra Ciel e permita microfone e notificações. Toque novamente em Ativar escuta se a permissão foi recém-concedida.
 2. Aguarde o carregamento do modelo. Diga “Ciel, próxima música” e observe “Ouvi”. Teste em silêncio e com música para medir erros.
@@ -41,7 +63,7 @@ Não há bypass de senha nem serviço de acessibilidade para clicar em telas. Os
 
 ## Compilar
 
-JDK 17, Android SDK 35 e Gradle 8.9. Defina `sdk.dir` em `local.properties` ou ANDROID_HOME. Use `./gradlew testDebugUnitTest assembleDebug lintDebug`. Saída: `app/build/outputs/apk/debug/app-debug.apk`.
+JDK 17, Android SDK 35 e Gradle 8.9. Defina `sdk.dir` em `local.properties` ou ANDROID_HOME. Use `./gradlew testDebugUnitTest assembleDebug lintDebug`. Saída: `app/build/outputs/apk/debug/app-debug.apk`. Para publicação, use o workflow e os segredos de assinatura. Builds debug feitos em outra máquina têm outra assinatura e não atualizam o app publicado.
 
 O modelo Vosk `vosk-model-small-pt-0.3` deve estar em `app/src/main/assets/model-pt/`, incluindo arquivo `uuid`. Fonte: https://alphacephei.com/vosk/models (licença do modelo listada pelo fornecedor: Apache 2.0). Vosk e JNA são dependências Gradle; conserve seus avisos de licença na distribuição. Não publique APKs com tokens ou identificadores privados preenchidos.
 

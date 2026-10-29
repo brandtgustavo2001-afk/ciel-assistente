@@ -2,11 +2,28 @@ plugins { id 'com.android.application' }
 android {
     namespace 'br.com.ciel'
     compileSdk 35
-    defaultConfig { applicationId 'br.com.ciel'; minSdk 33; targetSdk 35; versionCode 1; versionName '0.1.0' }
+    defaultConfig {
+        applicationId 'br.com.ciel'; minSdk 33; targetSdk 35
+        versionCode = (project.findProperty('cielVersionCode') ?: '2').toInteger()
+        versionName = (project.findProperty('cielVersionName') ?: '0.2.0')
+    }
+    signingConfigs {
+        release {
+            if (System.getenv('CIEL_KEYSTORE_PATH')) {
+                storeFile file(System.getenv('CIEL_KEYSTORE_PATH'))
+                storePassword System.getenv('CIEL_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('CIEL_KEY_ALIAS')
+                keyPassword System.getenv('CIEL_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes { release { signingConfig signingConfigs.release } }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
 dependencies {
     implementation 'com.alphacephei:vosk-android:0.3.47@aar'
     implementation 'net.java.dev.jna:jna:5.13.0@aar'
+    implementation 'androidx.work:work-runtime:2.10.0'
+    implementation 'androidx.core:core:1.15.0'
     testImplementation 'junit:junit:4.13.2'
 }
