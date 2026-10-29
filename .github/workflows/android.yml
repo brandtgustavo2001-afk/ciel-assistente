@@ -1,7 +1,7 @@
 name: Build and publish Ciel
 on:
   push:
-    branches: [main]
+    branches: [main, fix/runtime-voice-interface]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -33,8 +33,30 @@ jobs:
           echo "VERSION_NAME=0.2.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
       - name: Tests, lint and debug build
         run: bash gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
+      - name: Enable emulator acceleration
+        run: sudo chmod 666 /dev/kvm
+      - name: Android runtime tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: default
+          profile: pixel_6
+          disable-animations: true
+          script: bash gradlew --no-daemon connectedDebugAndroidTest
+      - name: Collect screenshots
+        if: always()
+        run: adb pull /sdcard/Android/data/br.com.ciel/files/screenshots screenshots || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-runtime-evidence
+          path: |
+            screenshots/
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
       - name: Restore signing key
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           KEYSTORE_B64: ${{ secrets.CIEL_KEYSTORE_BASE64 }}
         run: |
@@ -42,7 +64,7 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/ciel-signing.jks"
           chmod 600 "$RUNNER_TEMP/ciel-signing.jks"
       - name: Signed APK
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           CIEL_KEYSTORE_PATH: ${{ runner.temp }}/ciel-signing.jks
           CIEL_KEYSTORE_PASSWORD: ${{ secrets.CIEL_KEYSTORE_PASSWORD }}
@@ -50,7 +72,7 @@ jobs:
           CIEL_KEY_PASSWORD: ${{ secrets.CIEL_KEY_PASSWORD }}
         run: bash gradlew --no-daemon assembleRelease -PcielVersionCode="$VERSION_CODE" -PcielVersionName="$VERSION_NAME"
       - name: Verify and prepare release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           mkdir -p publish
           cp app/build/outputs/apk/release/app-release.apk publish/Ciel.apk
@@ -58,7 +80,7 @@ jobs:
           python3 scripts/release_metadata.py publish/Ciel.apk "$VERSION_CODE" "$VERSION_NAME" publish/update.json
           cd publish && sha256sum Ciel.apk > SHA256SUMS.txt
       - name: Publish release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

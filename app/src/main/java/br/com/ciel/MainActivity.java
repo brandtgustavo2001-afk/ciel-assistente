@@ -44,7 +44,7 @@ public class MainActivity extends Activity {
         ScrollView ss=new ScrollView(this);settings=column();settings.setPadding(dp(24),dp(12),dp(24),dp(20));ss.addView(settings);pages.addView(ss);ss.setVisibility(View.GONE);
         // Switch scroll containers, retaining their fields and unsaved settings.
         LinearLayout nav=new LinearLayout(this);nav.setPadding(dp(16),dp(8),dp(16),dp(8));shell.addView(nav);
-        Button h=new Button(this);h.setText("Conversar");h.setAllCaps(false);nav.addView(h,new LinearLayout.LayoutParams(0,dp(52),1));h.setOnClickListener(v->{hs.setVisibility(View.VISIBLE);ss.setVisibility(View.GONE);});
+        Button h=new Button(this);h.setText("Início");h.setAllCaps(false);nav.addView(h,new LinearLayout.LayoutParams(0,dp(52),1));h.setOnClickListener(v->{hs.setVisibility(View.VISIBLE);ss.setVisibility(View.GONE);});
         Button cfg=new Button(this);cfg.setText("Configurações");cfg.setAllCaps(false);nav.addView(cfg,new LinearLayout.LayoutParams(0,dp(52),1));cfg.setOnClickListener(v->{hs.setVisibility(View.GONE);ss.setVisibility(View.VISIBLE);});
         home.addView(label("Vamos fazer acontecer.",28,INK));home.addView(label("Toque, espere o microfone abrir e fale seu pedido.",16,MUTED));
         LinearLayout voice=card(home,"COMANDO POR VOZ");
@@ -85,7 +85,7 @@ public class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==10){if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startAudio(pendingAudioAction);else status.setText("Microfone negado. Permita o microfone nas configurações para usar voz.");}}
     private void handle(Intent i){if(i.getBooleanExtra("installUpdate",false)){i.removeExtra("installUpdate");UpdateWorker.install(this);}if(i.getData()==null)return;var uri=i.getData();i.setData(null);status.setText("Conectando Spotify…");worker.submit(()->{try{spotify.callback(uri);runOnUiThread(()->status.setText("Spotify conectado. Abra o Spotify e reproduza uma música uma vez neste celular."));}catch(Exception e){runOnUiThread(()->status.setText(e.getMessage()));}});}
     @Override public void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);handle(i);}
-    @Override public void onResume(){super.onResume();status.setText(getSharedPreferences("ciel",MODE_PRIVATE).getString("status","Escuta desligada."));lastHeard.setText(getSharedPreferences("ciel",MODE_PRIVATE).getString("lastHeard","Sua fala aparecerá aqui."));IntentFilter filter=new IntentFilter(ListeningService.STATUS);registerReceiver(updates,filter,Context.RECEIVER_NOT_EXPORTED);}
+    @Override public void onResume(){super.onResume();lastHeard.setText(getSharedPreferences("ciel",MODE_PRIVATE).getString("lastHeard","Sua fala aparecerá aqui."));IntentFilter filter=new IntentFilter(ListeningService.STATUS);registerReceiver(updates,filter,Context.RECEIVER_NOT_EXPORTED);}
     @Override public void onPause(){unregisterReceiver(updates);super.onPause();}
     @Override public void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }

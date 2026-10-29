@@ -37,7 +37,7 @@ public class VoiceUiTest {
     @Test public void cancelledRecognitionDoesNotRunCommand(){
         var monitor=inst.addMonitor(new IntentFilter(RecognizerIntent.ACTION_RECOGNIZE_SPEECH),new Instrumentation.ActivityResult(0,null),true);
         try(ActivityScenario<MainActivity> scenario=ActivityScenario.launch(MainActivity.class)){
-            scenario.onActivity(MainActivity::foregroundVoice);inst.waitForIdleSync();assertFalse(context.getSharedPreferences("ciel",0).contains("lastHeard"));
+            scenario.onActivity(MainActivity::foregroundVoice);inst.waitForIdleSync();assertFalse(context.getSharedPreferences("ciel",0).contains("lastHeard"));scenario.onActivity(a->assertTrue(((TextView)a.getWindow().getDecorView().findViewWithTag("voice-status")).getText().toString().contains("cancelada")));
         }finally{inst.removeMonitor(monitor);}
     }
     @Test public void settingsAreSeparateAndHomeIsReadable()throws Exception{
