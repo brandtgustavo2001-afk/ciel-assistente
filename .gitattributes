@@ -1,0 +1,5 @@
+gradlew text eol=lf
+*.yml text eol=lf
+*.py text eol=lf
+app/src/main/assets/** -text
+*.jar binary
