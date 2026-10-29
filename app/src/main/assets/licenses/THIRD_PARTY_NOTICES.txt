@@ -1,0 +1,20 @@
+Ciel uses the following third-party components:
+
+Vosk speech recognition — Alpha Cephei Inc.
+https://github.com/alphacep/vosk-api
+Apache License 2.0
+
+Portuguese speech model vosk-model-small-pt-0.3 — Alpha Cephei model catalog
+https://alphacephei.com/vosk/models
+License listed in the model catalog: Apache License 2.0
+
+JNA — Java Native Access contributors
+https://github.com/java-native-access/jna
+Dual licensed LGPL 2.1 or later / Apache License 2.0; used here under Apache 2.0.
+
+AndroidX Core and WorkManager — The Android Open Source Project
+https://android.googlesource.com/platform/frameworks/support/
+Apache License 2.0
+
+The Apache License 2.0 text is included in Apache-2.0.txt.
+Additional library notices and metadata are retained in the packaged dependencies.
