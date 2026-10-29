@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 public class VoiceUiTest {
     private final Instrumentation inst=InstrumentationRegistry.getInstrumentation();
     private Context context;
-    @Before public void setup(){context=inst.getTargetContext();context.getSharedPreferences("ciel",0).edit().putBoolean("voiceConsent",true).remove("lastHeard").commit();}
+    @Before public void setup(){context=inst.getTargetContext();context.getSharedPreferences("ciel",0).edit().putBoolean("voiceConsent",true).putBoolean("systemSpeech",true).remove("lastHeard").commit();}
     @Test public void platformVoiceResultExecutesRealVolumeCommand()throws Exception{
         Intent result=new Intent().putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS,new ArrayList<>(java.util.List.of("aumente o volume")));
         var monitor=inst.addMonitor(new IntentFilter(RecognizerIntent.ACTION_RECOGNIZE_SPEECH),new Instrumentation.ActivityResult(-1,result),true);
@@ -46,5 +46,5 @@ public class VoiceUiTest {
         }
     }
     private android.view.View findText(android.view.View v,String text){if(v instanceof TextView t&&text.equals(t.getText().toString()))return v;if(v instanceof android.view.ViewGroup group)for(int i=0;i<group.getChildCount();i++){var found=findText(group.getChildAt(i),text);if(found!=null)return found;}return null;}
-    private void screenshot(String name)throws Exception{var bitmap=inst.getUiAutomation().takeScreenshot();assertNotNull(bitmap);File dir=new File(context.getExternalFilesDir(null),"screenshots");dir.mkdirs();try(var out=new FileOutputStream(new File(dir,name+".png"))){bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();}
+    private void screenshot(String name)throws Exception{var bitmap=inst.getUiAutomation().takeScreenshot();assertNotNull(bitmap);File dir=new File(context.getExternalFilesDir(null),"screenshots");dir.mkdirs();File shot=new File(dir,name+".png");try(var out=new FileOutputStream(shot)){bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();try(var fd=inst.getUiAutomation().executeShellCommand("cp "+shot.getAbsolutePath()+" /data/local/tmp/ciel-"+name+".png");var in=new android.os.ParcelFileDescriptor.AutoCloseInputStream(fd)){in.readAllBytes();}}
 }

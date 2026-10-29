@@ -45,7 +45,9 @@ jobs:
           disable-animations: true
           script: |
             bash gradlew --no-daemon connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/br.com.ciel/files/screenshots screenshots
+            mkdir -p screenshots
+            adb pull /data/local/tmp/ciel-home.png screenshots/home.png
+            adb pull /data/local/tmp/ciel-settings.png screenshots/settings.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
