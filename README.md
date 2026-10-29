@@ -27,7 +27,7 @@ Assistente de comandos em português para teste no Poco X7 Pro (Android 13 ou su
 ## Estado real
 
 - Serviço de microfone iniciado por ação do usuário, notificação persistente com Parar e encerramento automático em 8 horas. Não reinicia no boot nem após encerramento pelo sistema.
-- Reconhecimento de fala local com modelo português. A detecção de `Ciel` / `Siel` é experimental: o nome depende do vocabulário e da transcrição do modelo e NÃO foi validado. Veja “Ouvi” no aplicativo. Não é um detector de palavra dedicado e pode não reconhecer o nome ou pode ativar por engano.
+- Reconhecimento dos comandos com modelo português. A chamada usa referências acústicas locais: toque em **Calibrar Ciel**, diga somente “Ciel” três vezes, aguardando a indicação entre cada chamada. Depois diga **Ciel**, aguarde o sinal e só então fale o comando. Não precisa dizer “Ei”. A comparação usa MFCC/DTW e não depende de o nome existir no dicionário de português. A precisão em voz humana, ruído e no Poco ainda precisa de medição; pode haver chamadas perdidas e ativações indevidas. A calibração é uma referência de som, não autenticação de identidade.
 - Abrir WhatsApp/Spotify e criar alarme: gera notificação tocável. NÃO abre aplicativos automaticamente com a tela bloqueada. O Android pode exigir senha. Alarme só é solicitado após o toque; não diga que foi criado antes da confirmação no relógio.
 - Spotify: OAuth PKCE sem segredo embutido, busca por nome, reprodução do primeiro resultado, pausar/continuar, próxima/anterior. Exige Premium, Client ID e permissão da conta no aplicativo cadastrado. Comandos afetam o dispositivo ativo da conta, que pode ser outro aparelho. Comece reproduzindo no Spotify do Poco para torná-lo ativo.
 - “Feche Spotify” pausa a reprodução; não encerra o processo à força.
@@ -51,15 +51,15 @@ Tokens ficam nos dados privados do app, excluídos de backup. Desconectar apaga 
 
 Baixe `Ciel.apk` na seção Releases do GitHub, transfira para o Poco e abra para instalar a prévia. O Android poderá pedir autorização de instalação para o aplicativo que abriu o arquivo. É uma distribuição experimental, não uma versão de loja.
 
-1. Abra Ciel e permita microfone e notificações. Toque novamente em Ativar escuta se a permissão foi recém-concedida.
-2. Aguarde o carregamento do modelo. Diga “Ciel, próxima música” e observe “Ouvi”. Teste em silêncio e com música para medir erros.
-3. Teste “Ciel” sozinho; após “Pode falar”, diga o comando.
+1. Abra Ciel e toque em **Calibrar Ciel (3 chamadas)**. Permita microfone e notificações; a operação continua automaticamente após a permissão de microfone.
+2. Aguarde o carregamento. Diga somente “Ciel” três vezes, esperando a indicação 1, 2 e 3 na tela. Faça isso em local silencioso, na distância em que pretende usar o celular. As referências acústicas ficam somente no aparelho, em arquivo privado excluído de backup. Nenhum áudio bruto é salvo. Para remover, toque em **Apagar calibração de voz**.
+3. Diga somente **Ciel**, espere o sinal e diga **Aumente o volume** (esse teste não precisa de Spotify). A tela mostra a ativação e a transcrição do comando. Se não reconhecer o nome, refaça a calibração. Se necessário, use **Falar comando (teste sem chamada)** para separar problemas de microfone/comando dos de ativação.
 4. Apague a tela por 1, 5 e 15 minutos e teste novamente. Repita com o aparelho bloqueado por senha. Registre resultados; o HyperOS pode interromper o serviço por bateria.
 5. Confirme que Desligar microfone e Parar na notificação removem o indicador de microfone.
 6. Ao abrir aplicativos ou pedir alarme, toque na notificação e desbloqueie se solicitado. Confira o horário na tela do relógio.
 7. Verifique o comportamento sem internet e com o Spotify desconectado. O app deve explicar a falha sem afirmar sucesso.
 
-Não há bypass de senha nem serviço de acessibilidade para clicar em telas. Os últimos textos de diagnóstico ficam localmente até serem substituídos ou os dados do aplicativo serem apagados. Áudio não é gravado em arquivo.
+Não há bypass de senha nem serviço de acessibilidade para clicar em telas. Os últimos textos de diagnóstico e as referências acústicas de calibração ficam localmente até serem substituídos ou apagados. Áudio bruto não é gravado em arquivo. Ao ocorrer falha de microfone ou modelo, a mensagem de erro é preservada para consulta ao reabrir o app.
 
 ## Compilar
 
