@@ -16,7 +16,7 @@ public record Command(String kind, String value, int hour, int minute) {
     }
     public static Command parse(String raw) {
         String s = normalize(raw);
-        if (s.matches(".*\\b(ab(ra|rir|re))\\b.*whatsapp.*")) return new Command("whatsapp", "", 0, 0);
+        if (s.matches(".*\\b(ab(ra|rir|re))\\b.*(?:whats ?app|zap).*")) return new Command("whatsapp", "", 0, 0);
         if (s.contains("alarme")) {
             Matcher m = Pattern.compile("\\b([0-9]{1,2})(?:(?:[:h]| horas?(?: e)? | e | )([0-9]{1,2}))?\\b").matcher(s);
             if (m.find()) {
@@ -35,8 +35,12 @@ public record Command(String kind, String value, int hour, int minute) {
         if (s.matches(".*\\b(feche|fechar|pare|parar|pause|pausar)\\b.*")) return new Command("pause", "", 0, 0);
         if (s.contains("proxima") || s.contains("pule")) return new Command("next", "", 0, 0);
         if (s.contains("anterior")) return new Command("previous", "", 0, 0);
-        if (s.contains("continue") || s.contains("retome")) return new Command("resume", "", 0, 0);
-        if (s.contains("volume")) return new Command(s.contains("abaix") || s.contains("dimin") ? "volumeDown" : "volumeUp", "", 0, 0);
+        if (s.contains("continue") || s.contains("continuar") || s.contains("retome") || s.contains("retomar")) return new Command("resume", "", 0, 0);
+        if (s.contains("volume")) {
+            if(s.matches(".*\\b(?:abaix[a-z]*|baix[a-z]*|dimin[a-z]*|reduz[a-z]*)\\b.*"))return new Command("volumeDown", "", 0, 0);
+            if(s.matches(".*\\b(?:aument[a-z]*|sub[a-z]*|elev[a-z]*)\\b.*"))return new Command("volumeUp", "", 0, 0);
+            return new Command("invalid","Diga aumentar volume ou diminuir volume.",0,0);
+        }
         if (s.matches(".*\\b(ab(ra|rir|re))\\b.*spotify.*")) return new Command("spotify", "", 0, 0);
         Matcher play = Pattern.compile("^(?:toque|tocar|reproduza|coloque) (?:a )?(?:musica )?(.+)$").matcher(s);
         if (play.find()) return new Command("play", play.group(1), 0, 0);

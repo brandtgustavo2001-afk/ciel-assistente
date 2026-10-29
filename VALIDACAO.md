@@ -1,5 +1,15 @@
 # Validação da prévia 0.1
 
+## Entendimento dos comandos: opção Android em 29/10/2026
+
+O usuário relatou a resposta “não entendi”. Verificado diretamente com `vosk_model_find_word`: Spotify e WhatsApp também estão ausentes do modelo local. A interface antes substituía a transcrição pela resposta, impedindo distinguir fala mal transcrita de comando não suportado.
+
+Implementados: linha persistente de última transcrição, reconhecimento Android de um comando por sessão (opt-in com aviso de possível processamento remoto), pt-BR explícito, espera de prontidão, liberação da captura local antes da sessão e retomada depois, timeout/cancelamento e mensagens por tipo de erro. Incluídas as queries de RecognitionService exigidas pelo Android. Nenhuma chave de API nem mudança automática de privacidade.
+
+Dois novos testes de interpretação cobrem variações de volume (incluindo baixar, que tinha direção errada), separação “Whats App” e “continuar a música”. A integração do serviço de voz e o repasse de microfone precisam de teste no aparelho, indisponível via ADB neste computador. Não se afirma que testes unitários comprovem o serviço do Google ou o Poco.
+
+Documentação consultada: https://developer.android.com/reference/android/speech/SpeechRecognizer e https://developer.android.com/reference/android/speech/RecognizerIntent.
+
 ## Correção de ativação em 29/10/2026
 
 Defeito reproduzido fora do Android com o mesmo modelo Vosk: a API informou explicitamente que `ciel` e `siel` estão ausentes do vocabulário. A frase sintetizada “Ciel, aumente o volume” foi transcrita como “se aumente o volume”; “Ciel” isolado resultou em texto vazio. A antiga comparação de texto nunca ativava nesses casos.

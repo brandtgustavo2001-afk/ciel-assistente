@@ -22,7 +22,17 @@ O `versionCode` de publicação é `1000 + GITHUB_RUN_NUMBER`, e o nome `0.2.GIT
 
 A chave privada de continuidade está nos GitHub Actions Secrets, com cópia local ignorada pelo Git em `.tools/ciel-signing.jks`. Essa chave foi preservada do primeiro APK experimental para permitir atualizar a instalação existente. Não a publique nem a substitua: perder a chave impede atualizar instalações existentes sem desinstalar. Esta é uma distribuição experimental fora da loja, ainda não uma configuração definitiva de assinatura para Google Play.
 
-Assistente de comandos em português para teste no Poco X7 Pro (Android 13 ou superior). Sem chave OpenAI, sem conversa de IA e sem acesso à conta ChatGPT. O áudio é reconhecido localmente com Vosk; apenas buscas e comandos musicais usam a internet e a API Spotify.
+Assistente de comandos em português para teste no Poco X7 Pro (Android 13 ou superior). Sem chave OpenAI, sem conversa de IA e sem acesso à conta ChatGPT. A chamada é local; comandos podem usar Vosk local ou, após sua escolha, o serviço de voz do Android, que pode processar áudio pela internet. Buscas e comandos musicais usam a API Spotify.
+
+## Se ela não entender os comandos
+
+1. Atualize o aplicativo e toque em **Usar voz do Android (recomendado para comandos)**, perto do início da tela.
+2. Leia o aviso: esse modo usa o serviço de voz configurado no Android, que pode enviar o áudio do comando ao provedor pela internet. Só é ativado após sua escolha. Não requer chave de API. A qualidade e a disponibilidade dependem do serviço e do aparelho; não foram medidas no Poco.
+3. Toque em **Usar e testar**, espere **Android pronto. Fale o comando agora** e diga **Aumente o volume**. A linha **Última fala ouvida** mantém o texto mesmo quando o comando é recusado.
+4. Depois teste outros comandos. Se der erro, a tela informa se houve falha de rede, falta de serviço/idioma, microfone ocupado ou fala não reconhecida. Nenhuma troca automática para o serviço Android ocorre sem sua escolha.
+5. Para voltar ao processamento local, toque em **Usar reconhecimento somente local**. Isso encerra a sessão atual. Ative novamente a escuta ou Falar comando.
+
+O modelo local tem limitações verificadas: os nomes `Spotify`, `WhatsApp` e `Ciel` não estão no seu vocabulário. O modo Android é uma alternativa para os comandos; a chamada Ciel permanece local com a calibração acústica. A Ciel encerra a captura local antes de entregar o microfone ao serviço Android e retoma a detecção local após finalizar a sessão. O serviço Android escuta um comando por vez, com limite de espera, e não fica ouvindo continuamente. A última transcrição fica nos dados privados do app, excluídos de backup; áudio bruto não é gravado pela Ciel. As práticas do provedor de voz são próprias dele.
 
 ## Estado real
 

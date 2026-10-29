@@ -13,11 +13,13 @@ import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
     private TextView status;
+    private TextView lastHeard;
+    private TextView speechMode;
     private EditText client;
     private Spotify spotify;
     private String pendingAudioAction="";
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
-    private final BroadcastReceiver updates=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){status.setText(i.getStringExtra("text"));}};
+    private final BroadcastReceiver updates=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){if(i.hasExtra("text"))status.setText(i.getStringExtra("text"));if(i.hasExtra("heard"))lastHeard.setText("Última fala ouvida: "+i.getStringExtra("heard"));}};
     @Override public void onCreate(Bundle saved){super.onCreate(saved);spotify=new Spotify(this);render();UpdateWorker.schedule(this);handle(getIntent());}
     private TextView label(String text,int size,int color){TextView t=new TextView(this);t.setText(text);t.setTextSize(size);t.setTextColor(color);t.setPadding(0,16,0,16);return t;}
     private void button(LinearLayout root,String text,Runnable action){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setPadding(12,16,12,16);root.addView(b,new LinearLayout.LayoutParams(-1,-2));b.setOnClickListener(v->action.run());}
@@ -30,6 +32,10 @@ public class MainActivity extends Activity {
         String version="";try{version=getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(Exception ignored){}
         root.addView(label("PRÉVIA EXPERIMENTAL · "+version+"\nReconhecimento local em português. Ativação por nome e funcionamento com a tela apagada ainda precisam de teste no seu Poco.",15,Color.LTGRAY));
         status=label(getSharedPreferences("ciel",MODE_PRIVATE).getString("status","Escuta desligada."),18,Color.WHITE);root.addView(status);
+        lastHeard=label("Última fala ouvida: "+getSharedPreferences("ciel",MODE_PRIVATE).getString("lastHeard","nenhuma"),17,Color.rgb(132,226,211));lastHeard.setTextIsSelectable(true);root.addView(lastHeard);
+        speechMode=label(speechModeText(),16,Color.LTGRAY);root.addView(speechMode);
+        button(root,"Usar voz do Android (recomendado para comandos)",()->new AlertDialog.Builder(this).setTitle("Reconhecimento de comandos pelo Android").setMessage("O modelo local é limitado e não reconhece alguns nomes, como Spotify e WhatsApp. O serviço de voz configurado no Android pode reconhecer melhor, mas pode enviar o áudio do comando ao provedor pela internet. A chamada Ciel continua local. Nenhuma chave de API é necessária. Deseja usar o serviço do Android e fazer um teste?").setPositiveButton("Usar e testar",(d,w)->{getSharedPreferences("ciel",MODE_PRIVATE).edit().putBoolean("systemSpeech",true).apply();speechMode.setText(speechModeText());startAudio("command");}).setNegativeButton("Continuar local",null).show());
+        button(root,"Usar reconhecimento somente local",()->{getSharedPreferences("ciel",MODE_PRIVATE).edit().putBoolean("systemSpeech",false).apply();stopService(new Intent(this,ListeningService.class));speechMode.setText(speechModeText());status.setText("Reconhecimento local selecionado. Toque em Falar comando para testar. Esse modelo pode errar nomes de aplicativos e músicas.");});
         root.addView(label("Primeiro calibre a chamada. Depois diga só Ciel, espere o sinal e fale o comando. Não é necessário dizer Ei. A calibração é local e pode precisar ser refeita em outro ambiente.",16,Color.LTGRAY));
         button(root,"Calibrar Ciel (3 chamadas)",()->new AlertDialog.Builder(this).setTitle("Ensinar sua chamada à Ciel").setMessage("Em local silencioso, diga apenas Ciel três vezes, aguardando a indicação na tela entre cada chamada. Características acústicas da sua voz ficarão somente neste aparelho; o áudio não será salvo nem enviado. Você pode apagar essa referência abaixo.").setPositiveButton("Começar",(d,w)->startAudio("calibrate")).setNegativeButton("Cancelar",null).show());
         button(root,"Ativar escuta",()->startAudio(""));
@@ -54,8 +60,9 @@ public class MainActivity extends Activity {
         button(root,"Instalar atualização baixada",()->UpdateWorker.install(this));
         button(root,"Abrir versões no GitHub",()->startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://github.com/"+UpdateWorker.REPO+"/releases/latest"))));
         root.addView(label("Como funciona",23,Color.WHITE));
-        root.addView(label("Ative a escuta com o app aberto antes de apagar a tela. A notificação informa quando o microfone está ativo. O modo encerra após 8 horas e não reinicia sozinho.\n\nO áudio é processado localmente e não é salvo. A busca de músicas vai para o Spotify. Não há integração de conversa com ChatGPT nesta prévia.\n\nAbrir aplicativos e criar alarmes exige tocar numa notificação e pode exigir desbloqueio. Comandos do Spotify usam o aparelho ativo da sua conta. Fechar Spotify pausa a reprodução; não força o encerramento do processo.",15,Color.LTGRAY));
+        root.addView(label("Ative a escuta com o app aberto antes de apagar a tela. A notificação informa quando o microfone está ativo. O modo encerra após 8 horas e não reinicia sozinho.\n\nA chamada Ciel é local. Ao escolher a voz do Android, o áudio de cada comando pode ser enviado ao provedor do serviço de voz pela internet. O modo somente local não envia áudio. A Ciel não salva áudio bruto. A última transcrição fica neste aparelho para diagnóstico. A busca de músicas vai para o Spotify. Não há conversa com ChatGPT nesta prévia.\n\nAbrir aplicativos e criar alarmes exige tocar numa notificação e pode exigir desbloqueio. Comandos do Spotify usam o aparelho ativo da sua conta. Fechar Spotify pausa a reprodução; não força o encerramento do processo.",15,Color.LTGRAY));
     }
+    private String speechModeText(){return getSharedPreferences("ciel",MODE_PRIVATE).getBoolean("systemSpeech",false)?"Comandos: serviço de voz do Android (pode usar internet).":"Comandos: modelo local limitado. Use a voz do Android se a transcrição estiver errada.";}
     private void startAudio(String action){
         pendingAudioAction=action;
         if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO,Manifest.permission.POST_NOTIFICATIONS},10);return;}
@@ -64,7 +71,7 @@ public class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==10){if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startAudio(pendingAudioAction);else status.setText("Microfone negado. Permita o microfone nas configurações para usar voz.");}}
     private void handle(Intent i){if(i.getBooleanExtra("installUpdate",false)){i.removeExtra("installUpdate");UpdateWorker.install(this);}if(i.getData()==null)return;var uri=i.getData();i.setData(null);status.setText("Conectando Spotify…");worker.submit(()->{try{spotify.callback(uri);runOnUiThread(()->status.setText("Spotify conectado. Abra o Spotify e reproduza uma música uma vez neste celular."));}catch(Exception e){runOnUiThread(()->status.setText(e.getMessage()));}});}
     @Override public void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);handle(i);}
-    @Override public void onResume(){super.onResume();status.setText(getSharedPreferences("ciel",MODE_PRIVATE).getString("status","Escuta desligada."));IntentFilter filter=new IntentFilter(ListeningService.STATUS);registerReceiver(updates,filter,Context.RECEIVER_NOT_EXPORTED);}
+    @Override public void onResume(){super.onResume();status.setText(getSharedPreferences("ciel",MODE_PRIVATE).getString("status","Escuta desligada."));lastHeard.setText("Última fala ouvida: "+getSharedPreferences("ciel",MODE_PRIVATE).getString("lastHeard","nenhuma"));IntentFilter filter=new IntentFilter(ListeningService.STATUS);registerReceiver(updates,filter,Context.RECEIVER_NOT_EXPORTED);}
     @Override public void onPause(){unregisterReceiver(updates);super.onPause();}
     @Override public void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }
