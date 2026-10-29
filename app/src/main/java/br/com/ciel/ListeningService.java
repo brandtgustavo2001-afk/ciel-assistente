@@ -60,6 +60,7 @@ public class ListeningService extends Service {
             @Override public void onDone(String id){if(id.equals(activeSpeech)){speaking=false;silenceUntil=SystemClock.elapsedRealtime()+150;}}
             @Override public void onError(String id){if(id.equals(activeSpeech))speaking=false;}
         });
+        if(getSharedPreferences("ciel",MODE_PRIVATE).getBoolean("forgetWake",false)){new java.io.File(getFilesDir(),"ciel-wake.bin").delete();getSharedPreferences("ciel",MODE_PRIVATE).edit().remove("forgetWake").apply();}
         try{detector.load(new java.io.File(getFilesDir(),"ciel-wake.bin"));}catch(Exception e){status("Calibração não pôde ser lida. Calibre Ciel novamente.");}
         status("Carregando reconhecimento local…");
         StorageService.unpack(this,"model-pt","model",m->{
@@ -127,11 +128,12 @@ public class ListeningService extends Service {
         main.post(()->{if(destroyed)return;try{ToneGenerator tone=new ToneGenerator(AudioManager.STREAM_NOTIFICATION,65);tone.startTone(ToneGenerator.TONE_PROP_BEEP,100);main.postDelayed(tone::release,200);}catch(Exception ignored){}});
     }
     private void listen(){
-        short[] chunk=new short[320];long lastPartial=0;long lastLevel=0;
+        short[] chunk=new short[320];long lastPartial=0;long lastLevel=0;long lastMeter=0;
         try{while(!destroyed){
             if(systemActive){if(resumeCaptureAt>0&&SystemClock.elapsedRealtime()>=resumeCaptureAt){audio=createCapture();systemActive=false;resumeCaptureAt=0;segmenter.reset();recognizer.reset();}else{Thread.sleep(20);continue;}}
             int count=audio.read(chunk,0,chunk.length);if(count<0)throw new IllegalStateException("Leitura de áudio falhou ("+count+").");if(count==0)continue;
             long now=SystemClock.elapsedRealtime();
+            if(now-lastMeter>150){double energy=0;for(int i=0;i<count;i++)energy+=(double)chunk[i]*chunk[i];int level=(int)Math.min(100,Math.sqrt(energy/count)/50);sendBroadcast(new Intent(STATUS).setPackage(getPackageName()).putExtra("level",level));lastMeter=now;}
             String mode=requestedMode.getAndSet("");
             if(mode.equals("calibrate")){waitingUntil=0;calibrating=true;calibrationDeadline=now+15000;detector.clear();segmenter.reset();recognizer.reset();status("Calibração 1 de 3: diga somente Ciel e faça uma pausa.");}
             else if(mode.equals("command")){calibrating=false;armCommand();}
@@ -157,25 +159,7 @@ public class ListeningService extends Service {
             }
         }}catch(Exception e){if(!destroyed)fail("Escuta interrompida: "+e.getMessage());}
     }
-    private void open(Intent intent,String description) {
-        // Apps de terceiros não podem ser abertos silenciosamente por um serviço em segundo plano.
-        // Uma notificação permite o gesto explícito do usuário e respeita o bloqueio do Android.
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        if(intent.resolveActivity(getPackageManager())==null){reply("Não encontrei aplicativo para "+description);return;}
-        PendingIntent pending=PendingIntent.getActivity(this,20,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-        getSystemService(NotificationManager.class).notify(2,new Notification.Builder(this,"listening").setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("Ciel • "+description).setContentText("Toque para continuar. O celular poderá pedir desbloqueio.").setContentIntent(pending).setAutoCancel(true).build());
-        reply("Toque na notificação para "+description+". O Android pode pedir desbloqueio.");
-    }
-    private void run(Command c) {
-        switch(c.kind()) {
-            case "invalid": reply(c.value()); break;
-            case "whatsapp": {Intent i=getPackageManager().getLaunchIntentForPackage("com.whatsapp");if(i==null)reply("WhatsApp não instalado.");else open(i,"abrir WhatsApp");break;}
-            case "spotify": {Intent i=getPackageManager().getLaunchIntentForPackage("com.spotify.music");if(i==null)reply("Spotify não instalado.");else open(i,"abrir Spotify");break;}
-            case "alarm": open(new Intent(AlarmClock.ACTION_SET_ALARM).putExtra(AlarmClock.EXTRA_HOUR,c.hour()).putExtra(AlarmClock.EXTRA_MINUTES,c.minute()).putExtra(AlarmClock.EXTRA_MESSAGE,"Ciel").putExtra(AlarmClock.EXTRA_SKIP_UI,false),String.format(Locale.ROOT,"criar alarme às %02d:%02d",c.hour(),c.minute()));break;
-            case "volumeUp": case "volumeDown": getSystemService(AudioManager.class).adjustStreamVolume(AudioManager.STREAM_MUSIC,c.kind().equals("volumeUp")?AudioManager.ADJUST_RAISE:AudioManager.ADJUST_LOWER,0);reply("Volume ajustado.");break;
-            default: busy=true;worker.submit(()->{try{reply(new Spotify(this).execute(c));}catch(Exception e){reply(e.getMessage());}finally{main.post(()->busy=false);}});
-        }
-    }
+    private void run(Command c){busy=true;Commands.execute(this,c,message->{busy=false;reply(message);});}
     @Override public IBinder onBind(Intent intent){return null;}
-    @Override public void onDestroy(){destroyed=true;main.removeCallbacksAndMessages(null);if(systemRecognizer!=null)systemRecognizer.cancel();if(audio!=null)try{audio.stop();}catch(Exception ignored){}if(audioThread!=null)try{audioThread.join(2000);}catch(InterruptedException e){Thread.currentThread().interrupt();}if(audioThread==null||!audioThread.isAlive()){if(audio!=null)audio.release();if(recognizer!=null)recognizer.close();if(model!=null)model.close();}if(tts!=null){tts.stop();tts.shutdown();}if(wake!=null&&wake.isHeld())wake.release();worker.shutdownNow();status(failure==null?"Escuta desligada.":failure);super.onDestroy();}
+    @Override public void onDestroy(){destroyed=true;main.removeCallbacksAndMessages(null);if(systemRecognizer!=null)systemRecognizer.cancel();if(audio!=null)try{audio.stop();}catch(Exception ignored){}if(audioThread!=null)try{audioThread.join(2000);}catch(InterruptedException e){Thread.currentThread().interrupt();}if(audioThread==null||!audioThread.isAlive()){if(audio!=null)audio.release();if(recognizer!=null)recognizer.close();if(model!=null)model.close();}if(tts!=null){tts.stop();tts.shutdown();}if(wake!=null&&wake.isHeld())wake.release();worker.shutdownNow();if(getSharedPreferences("ciel",MODE_PRIVATE).getBoolean("forgetWake",false)){new java.io.File(getFilesDir(),"ciel-wake.bin").delete();}status(failure==null?"Escuta desligada.":failure);super.onDestroy();}
 }
