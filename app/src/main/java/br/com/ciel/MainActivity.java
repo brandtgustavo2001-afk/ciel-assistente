@@ -19,6 +19,7 @@ public class MainActivity extends Activity {
     private static final int BG=0xff0c141b, CARD=0xff17232d, INK=0xffedf5f6, MUTED=0xffa6bbc5, ACCENT=0xff86e2cf;
     private TextView lastHeard;
     private TextView speechMode;
+    private TextView settingsStatus;
     private EditText client;
     private Spotify spotify;
     private String pendingAudioAction="";
@@ -56,7 +57,7 @@ public class MainActivity extends Activity {
         LinearLayout transcript=card(home,"O QUE EU OUVI");lastHeard=label(getSharedPreferences("ciel",MODE_PRIVATE).getString("lastHeard","Sua fala aparecerá aqui."),20,INK);lastHeard.setTag("last-heard");lastHeard.setTextIsSelectable(true);transcript.addView(lastHeard);
         LinearLayout examples=card(home,"COMECE COM UM PEDIDO SIMPLES");examples.addView(label("“Aumente o volume”\n“Abra o WhatsApp”\n“Crie alarme para sete horas”",16,INK));examples.addView(label("Spotify precisa de uma conta conectada. A Ciel executa comandos; ainda não é uma conversa livre.",14,MUTED));
         LinearLayout wake=card(home,"CHAMAR SEM TOCAR");wake.addView(label("Diga Ciel, espere a indicação e fale.\nEsse modo é experimental e precisa de calibração.",15,MUTED));button(wake,"Ativar chamada Ciel",()->startAudio(""));button(wake,"Desligar escuta",()->stopService(new Intent(this,ListeningService.class)));
-        settings.addView(label("Do seu jeito",28,INK));settings.addView(label("Voz, contas e atualização em um só lugar.",16,MUTED));
+        settings.addView(label("Do seu jeito",28,INK));settings.addView(label("Voz, contas e atualização em um só lugar.",16,MUTED));settingsStatus=label(status.getText().toString(),17,ACCENT);settingsStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);settings.addView(settingsStatus);status.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence t,int a,int c,int f){}public void onTextChanged(CharSequence t,int a,int b,int c){settingsStatus.setText(t);}public void afterTextChanged(android.text.Editable e){}});
         LinearLayout engine=card(settings,"RECONHECIMENTO");speechMode=label(speechModeText(),16,INK);engine.addView(speechMode);
         button(engine,"Usar voz do Android",()->voiceConsent(()->{getSharedPreferences("ciel",MODE_PRIVATE).edit().putBoolean("systemSpeech",true).apply();speechMode.setText(speechModeText());}));
         button(engine,"Usar modelo local",()->{getSharedPreferences("ciel",MODE_PRIVATE).edit().putBoolean("systemSpeech",false).putBoolean("voiceConsent",false).apply();stopService(new Intent(this,ListeningService.class));speechMode.setText(speechModeText());});
