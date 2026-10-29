@@ -43,10 +43,9 @@ jobs:
           target: default
           profile: pixel_6
           disable-animations: true
-          script: bash gradlew --no-daemon connectedDebugAndroidTest
-      - name: Collect screenshots
-        if: always()
-        run: adb pull /sdcard/Android/data/br.com.ciel/files/screenshots screenshots || true
+          script: |
+            bash gradlew --no-daemon connectedDebugAndroidTest
+            adb pull /sdcard/Android/data/br.com.ciel/files/screenshots screenshots
       - uses: actions/upload-artifact@v4
         if: always()
         with:
